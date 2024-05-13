@@ -65,118 +65,124 @@ class _FibonacciPageState extends State<FibonacciPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Center(child: Text(widget.title)),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Expanded(
-              child: ListView.builder(
-                controller: _controller,
-                itemCount: fibonacciList.length,
-                itemBuilder: (context, index) {
-                  return GestureDetector(
-                    onTap: () {
-                      final tappedItemType = fibonacciList[index].icon;
-                      setState(() {
-                        fibonacciListSheet.add(fibonacciList[index]);
-                        fibonacciListSheet
-                            .sort((a, b) => a.index.compareTo(b.index));
-                        tapIndexBs = fibonacciList[index].index;
-                        fibonacciList.removeAt(index);
-                        tapIndexMain = -1;
-                        //wait bottomSheet build
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                          _scrollToIndexBs(tapIndexBs);
+    return WillPopScope(
+      onWillPop: () async {
+        return false;
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+          title: Center(child: Text(widget.title)),
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Expanded(
+                child: ListView.builder(
+                  controller: _controller,
+                  itemCount: fibonacciList.length,
+                  itemBuilder: (context, index) {
+                    return GestureDetector(
+                      onTap: () {
+                        final tappedItemType = fibonacciList[index].icon;
+                        setState(() {
+                          fibonacciListSheet.add(fibonacciList[index]);
+                          fibonacciListSheet
+                              .sort((a, b) => a.index.compareTo(b.index));
+                          tapIndexBs = fibonacciList[index].index;
+                          fibonacciList.removeAt(index);
+                          tapIndexMain = -1;
+                          //wait bottomSheet build
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            _scrollToIndexBs(tapIndexBs);
+                          });
                         });
-                      });
-                      final filteredList = fibonacciListSheet
-                          .where((item) => item.icon == tappedItemType)
-                          .toList();
-                      showModalBottomSheet<void>(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return SizedBox(
-                            height: MediaQuery.of(context).size.height * 0.4,
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              mainAxisSize: MainAxisSize.min,
-                              children: <Widget>[
-                                Expanded(
-                                  child: ListView.builder(
-                                    controller: _bsController,
-                                    itemCount: filteredList.length,
-                                    itemBuilder: (context, index) {
-                                      return GestureDetector(
-                                        onTap: () {
-                                          setState(() {
-                                            fibonacciList
-                                                .add(filteredList[index]);
-                                            fibonacciList.sort((a, b) =>
-                                                a.index.compareTo(b.index));
-                                            tapIndexMain =
-                                                filteredList[index].index;
-                                            fibonacciListSheet
-                                                .remove(filteredList[index]);
-                                            tapIndexBs = -1;
-                                            _scrollToIndexMain(tapIndexMain);
-                                          });
-                                          Navigator.pop(context);
-                                        },
-                                        child: ListTile(
-                                          tileColor:
-                                              filteredList[index].index ==
-                                                      tapIndexBs
-                                                  ? Colors.green
-                                                  : Colors.transparent,
-                                          title: Text(
-                                            'Number: ${filteredList[index].number}',
+                        final filteredList = fibonacciListSheet
+                            .where((item) => item.icon == tappedItemType)
+                            .toList();
+                        showModalBottomSheet<void>(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return SizedBox(
+                              height: MediaQuery.of(context).size.height * 0.4,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                mainAxisSize: MainAxisSize.min,
+                                children: <Widget>[
+                                  Expanded(
+                                    child: ListView.builder(
+                                      controller: _bsController,
+                                      itemCount: filteredList.length,
+                                      itemBuilder: (context, index) {
+                                        return GestureDetector(
+                                          onTap: () {
+                                            setState(() {
+                                              fibonacciList
+                                                  .add(filteredList[index]);
+                                              fibonacciList.sort((a, b) =>
+                                                  a.index.compareTo(b.index));
+                                              tapIndexMain =
+                                                  filteredList[index].index;
+                                              fibonacciListSheet
+                                                  .remove(filteredList[index]);
+                                              tapIndexBs = -1;
+                                              _scrollToIndexMain(tapIndexMain);
+                                            });
+                                            Navigator.pop(context);
+                                          },
+                                          child: ListTile(
+                                            tileColor:
+                                                filteredList[index].index ==
+                                                        tapIndexBs
+                                                    ? Colors.green
+                                                    : Colors.transparent,
+                                            title: Text(
+                                              'Number: ${filteredList[index].number}',
+                                            ),
+                                            subtitle: Text(
+                                                'Index : ${filteredList[index].index}'),
+                                            trailing:
+                                                Icon(filteredList[index].icon),
                                           ),
-                                          subtitle: Text(
-                                              'Index : ${filteredList[index].index}'),
-                                          trailing:
-                                              Icon(filteredList[index].icon),
-                                        ),
-                                      );
-                                    },
+                                        );
+                                      },
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
+                            );
+                          },
+                        );
+                      },
+                      child: Row(
+                        children: [
+                          SizedBox(
+                            width: MediaQuery.of(context).size.width * 1,
+                            child: ListTile(
+                              tileColor:
+                                  fibonacciList[index].index == tapIndexMain
+                                      ? Colors.blue
+                                      : Colors.transparent,
+                              title: Text(
+                                'Number ${fibonacciList[index].number}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              subtitle:
+                                  Text('Index ${fibonacciList[index].index}'),
+                              trailing: Icon(fibonacciList[index].icon),
                             ),
-                          );
-                        },
-                      );
-                    },
-                    child: Row(
-                      children: [
-                        SizedBox(
-                          width: MediaQuery.of(context).size.width * 1,
-                          child: ListTile(
-                            tileColor:
-                                fibonacciList[index].index == tapIndexMain
-                                    ? Colors.blue
-                                    : Colors.transparent,
-                            title: Text(
-                              'Number ${fibonacciList[index].number}',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            subtitle:
-                                Text('Index ${fibonacciList[index].index}'),
-                            trailing: Icon(fibonacciList[index].icon),
                           ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
+                        ],
+                      ),
+                    );
+                  },
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
