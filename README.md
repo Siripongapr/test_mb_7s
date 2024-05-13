@@ -1,16 +1,10 @@
 # test_mb_7s
 
-A new Flutter project.
+This project is for testing 7s.
 
 ## Getting Started
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Function
+1. Generate fibonacci with scrollable widget (scroll down).
+2. Showing type of fibonacci thats mod 3 condition.
+3. Tap to display BottomSheet thats show the same type as the tapped Number.

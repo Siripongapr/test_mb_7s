@@ -13,10 +13,10 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const MyHomePage(title: 'Fibonacci Generater'),
     );
   }
 }
@@ -32,15 +32,27 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int fiboIndex = 0;
-  List<String> fibonacciList = [];
+  List<Fibonacci> fibonacciList = [];
+  List<Fibonacci> fibonacciListSheet = [];
+
   late ScrollController _controller;
 
   void generateFibonacci(int count) {
     BigInt a = BigInt.zero;
     BigInt b = BigInt.one;
+    String formatted;
+    IconData icon;
     fibonacciList.clear();
     for (int i = 0; i < count; i++) {
-      fibonacciList.add(BigIntToString(a));
+      formatted = BigIntToString(a);
+      BigInt.parse(formatted) % BigInt.parse('3') == BigInt.zero
+          ? icon = Icons.circle
+          : BigInt.parse(formatted) % BigInt.parse('3') == BigInt.one
+              ? icon = Icons.square_outlined
+              : icon = Icons.close;
+      fibonacciList.add(
+        Fibonacci(i, formatted, icon),
+      );
       BigInt temp = a + b;
       a = b;
       b = temp;
@@ -50,11 +62,7 @@ class _MyHomePageState extends State<MyHomePage> {
   String BigIntToString(BigInt n) {
     String result = '';
     String strN = n.abs().toString();
-    for (int i = 0; i < strN.length; i += 3) {
-      int endIndex = (i + 3 < strN.length) ? i + 3 : strN.length;
-      String part = strN.substring(i, endIndex);
-      result += part;
-    }
+    result = strN;
     return result;
   }
 
@@ -90,7 +98,7 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
+        title: Center(child: Text(widget.title)),
       ),
       body: Center(
         child: Column(
@@ -101,27 +109,58 @@ class _MyHomePageState extends State<MyHomePage> {
                 controller: _controller,
                 itemCount: fibonacciList.length,
                 itemBuilder: (context, index) {
-                  return Row(
-                    children: [
-                      SizedBox(
-                        width: MediaQuery.of(context).size.width * 0.9,
-                        child: ListTile(
-                          title: Text('Number ${fibonacciList[index]}'),
-                          subtitle: Text('Index $index'),
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        fibonacciListSheet.add(fibonacciList[index]);
+                        fibonacciList.removeAt(index);
+                      });
+                      showModalBottomSheet<void>(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return Container(
+                            height: MediaQuery.of(context).size.height * 0.4,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              mainAxisSize: MainAxisSize.min,
+                              children: <Widget>[
+                                Expanded(
+                                  child: ListView.builder(
+                                    itemCount: fibonacciListSheet.length,
+                                    itemBuilder: (context, index) {
+                                      return ListTile(
+                                        title: Text(
+                                          'index: ${fibonacciListSheet[index].index} Number: ${fibonacciListSheet[index].number}',
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      );
+                    },
+                    child: Row(
+                      children: [
+                        SizedBox(
+                          width: MediaQuery.of(context).size.width * 0.8,
+                          child: ListTile(
+                            title: Text(
+                              'Number ${fibonacciList[index].number}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            subtitle:
+                                Text('Index ${fibonacciList[index].index}'),
+                          ),
                         ),
-                      ),
-                      SizedBox(
-                          width: MediaQuery.of(context).size.width * 0.1,
-                          child: Icon(((BigInt.parse(fibonacciList[index])) %
-                                      BigInt.parse('3')) ==
-                                  BigInt.zero
-                              ? Icons.circle
-                              : ((BigInt.parse(fibonacciList[index])) %
-                                          BigInt.parse('3')) ==
-                                      BigInt.one
-                                  ? Icons.square_outlined
-                                  : Icons.close_outlined))
-                    ],
+                        SizedBox(
+                            width: MediaQuery.of(context).size.width * 0.2,
+                            child: Icon(fibonacciList[index].icon))
+                      ],
+                    ),
                   );
                 },
               ),
@@ -131,4 +170,11 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
     );
   }
+}
+
+class Fibonacci {
+  final int index;
+  final String number;
+  final IconData icon;
+  Fibonacci(this.index, this.number, this.icon);
 }
