@@ -14,9 +14,12 @@ class MyApp extends StatelessWidget {
       title: 'Flutter Demo',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        scaffoldBackgroundColor: Colors.white,
+        bottomSheetTheme: BottomSheetThemeData(backgroundColor: Colors.white),
         useMaterial3: true,
       ),
       home: const MyHomePage(title: 'Fibonacci Generater'),
+      debugShowCheckedModeBanner: false,
     );
   }
 }
@@ -31,28 +34,41 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int fiboIndex = 0;
   List<Fibonacci> fibonacciList = [];
   List<Fibonacci> fibonacciListSheet = [];
+  int tapIndexMain = -1;
+  int tapIndexBs = -1;
 
   late ScrollController _controller;
+  late ScrollController _bsController;
 
   void generateFibonacci(int count) {
-    BigInt a = BigInt.zero;
-    BigInt b = BigInt.one;
+    BigInt a = fibonacciList.isEmpty
+        ? BigInt.zero
+        : BigInt.parse(fibonacciList[fibonacciList.length - 2].number);
+    BigInt b = fibonacciList.isEmpty
+        ? BigInt.one
+        : BigInt.parse(fibonacciList.last.number);
+
     String formatted;
     IconData icon;
-    fibonacciList.clear();
-    for (int i = 0; i < count; i++) {
+    int startIndex = fibonacciList.isEmpty ? 0 : fibonacciList.last.index + 1;
+    int currentIndex = startIndex;
+
+    while (count > 0) {
       formatted = BigIntToString(a);
       BigInt.parse(formatted) % BigInt.parse('3') == BigInt.zero
           ? icon = Icons.circle
           : BigInt.parse(formatted) % BigInt.parse('3') == BigInt.one
               ? icon = Icons.square_outlined
               : icon = Icons.close;
-      fibonacciList.add(
-        Fibonacci(i, formatted, icon),
-      );
+
+      if (!fibonacciList.any((fibo) => fibo.number == formatted) ||
+          formatted == '1') {
+        fibonacciList.add(Fibonacci(currentIndex, formatted, icon));
+        count--;
+        currentIndex++;
+      }
       BigInt temp = a + b;
       a = b;
       b = temp;
@@ -66,13 +82,20 @@ class _MyHomePageState extends State<MyHomePage> {
     return result;
   }
 
+  void _scrollToIndex(int index) {
+    _bsController.animateTo(
+      index * 56,
+      duration: Duration(milliseconds: 500),
+      curve: Curves.easeInOut,
+    );
+  }
+
   _scrollListener() {
     if (_controller.offset >= _controller.position.maxScrollExtent &&
         !_controller.position.outOfRange) {
       setState(() {
         print("reach the bottom");
-        fiboIndex = fiboIndex + 40;
-        generateFibonacci(fiboIndex);
+        generateFibonacci(40);
         print(fibonacciList.length);
       });
     }
@@ -87,9 +110,9 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
-    fiboIndex = fiboIndex + 40;
-    generateFibonacci(fiboIndex);
+    generateFibonacci(40);
     _controller = ScrollController();
+    _bsController = ScrollController();
     _controller.addListener(_scrollListener);
   }
 
@@ -113,7 +136,15 @@ class _MyHomePageState extends State<MyHomePage> {
                     onTap: () {
                       setState(() {
                         fibonacciListSheet.add(fibonacciList[index]);
+                        fibonacciListSheet
+                            .sort((a, b) => a.index.compareTo(b.index));
+                        tapIndexBs = fibonacciList[index].index;
                         fibonacciList.removeAt(index);
+                        tapIndexMain = -1;
+                        //wait bottomSheet build
+                        WidgetsBinding.instance!.addPostFrameCallback((_) {
+                          _scrollToIndex(tapIndexBs);
+                        });
                       });
                       showModalBottomSheet<void>(
                         context: context,
@@ -126,11 +157,36 @@ class _MyHomePageState extends State<MyHomePage> {
                               children: <Widget>[
                                 Expanded(
                                   child: ListView.builder(
+                                    controller: _bsController,
                                     itemCount: fibonacciListSheet.length,
                                     itemBuilder: (context, index) {
-                                      return ListTile(
-                                        title: Text(
-                                          'index: ${fibonacciListSheet[index].index} Number: ${fibonacciListSheet[index].number}',
+                                      return GestureDetector(
+                                        onTap: () {
+                                          setState(() {
+                                            fibonacciList
+                                                .add(fibonacciListSheet[index]);
+                                            fibonacciList.sort((a, b) =>
+                                                a.index.compareTo(b.index));
+                                            tapIndexMain =
+                                                fibonacciListSheet[index].index;
+                                            fibonacciListSheet.removeAt(index);
+                                            tapIndexBs = -1;
+                                          });
+                                          Navigator.pop(context);
+                                        },
+                                        child: ListTile(
+                                          tileColor:
+                                              fibonacciListSheet[index].index ==
+                                                      tapIndexBs
+                                                  ? Colors.red
+                                                  : Colors.transparent,
+                                          title: Text(
+                                            'Number: ${fibonacciListSheet[index].number}',
+                                          ),
+                                          subtitle: Text(
+                                              'Index : ${fibonacciListSheet[index].index}'),
+                                          trailing: Icon(
+                                              fibonacciListSheet[index].icon),
                                         ),
                                       );
                                     },
@@ -145,8 +201,12 @@ class _MyHomePageState extends State<MyHomePage> {
                     child: Row(
                       children: [
                         SizedBox(
-                          width: MediaQuery.of(context).size.width * 0.8,
+                          width: MediaQuery.of(context).size.width * 1,
                           child: ListTile(
+                            tileColor:
+                                fibonacciList[index].index == tapIndexMain
+                                    ? Colors.blue
+                                    : Colors.transparent,
                             title: Text(
                               'Number ${fibonacciList[index].number}',
                               maxLines: 1,
@@ -154,11 +214,12 @@ class _MyHomePageState extends State<MyHomePage> {
                             ),
                             subtitle:
                                 Text('Index ${fibonacciList[index].index}'),
+                            trailing: Icon(fibonacciList[index].icon),
                           ),
                         ),
-                        SizedBox(
-                            width: MediaQuery.of(context).size.width * 0.2,
-                            child: Icon(fibonacciList[index].icon))
+                        // SizedBox(
+                        //     width: MediaQuery.of(context).size.width * 0.2,
+                        //     child: Icon(fibonacciList[index].icon))
                       ],
                     ),
                   );
